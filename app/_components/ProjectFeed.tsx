@@ -14,6 +14,7 @@ import { api } from "~/convex/_generated/api";
 import type { BasicProject } from "~/types/models";
 import LandingProjectCard from "./landing-project-card";
 import { ProjectModal } from "./ProjectModal";
+import { SearchNoResultsState } from "./search-no-results-state";
 
 const PAGE_SIZE = 12;
 

@@ -5,7 +5,6 @@ import {
 } from "convex/server";
 import { v } from "convex/values";
 import { Either } from "effect";
-import { isEmpty } from "effect/String";
 import { Result, type ResultShape } from "../lib/result";
 import type { BasicProject, Project } from "../types/models";
 import { internal } from "./_generated/api";
@@ -315,7 +314,8 @@ export const search = query({
   ): Promise<PaginationResult<BasicProject>> => {
     const trimmed = q.trim();
 
-    if (isEmpty(trimmed)) {
+    // Empty query → return empty page (the /search page handles the prompt state)
+    if (!trimmed) {
       return { page: [], isDone: true, continueCursor: "" };
     }
 
