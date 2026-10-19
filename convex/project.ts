@@ -5,6 +5,7 @@ import {
 } from "convex/server";
 import { v } from "convex/values";
 import { Either } from "effect";
+import { isEmpty } from "effect/String";
 import { Result, type ResultShape } from "../lib/result";
 import type { BasicProject, Project } from "../types/models";
 import { internal } from "./_generated/api";
@@ -280,6 +281,47 @@ export const listAll = query({
     const records = await ctx.db
       .query("project")
       .order("desc")
+      .paginate({
+        ...paginationOpts,
+        numItems: Math.min(50, paginationOpts.numItems),
+      });
+
+    return {
+      ...records,
+      page: await Promise.all(
+        records.page.map(async (project) => {
+          const profile: Doc<"profile"> = await ctx.db.get(project.userId);
+
+          return {
+            ...project,
+            username: profile?.username ?? "@anonymous",
+            ownerName:
+              `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim(),
+          };
+        }),
+      ),
+    };
+  },
+});
+
+export const search = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+    q: v.string(),
+  },
+  handler: async (
+    ctx,
+    { paginationOpts, q },
+  ): Promise<PaginationResult<BasicProject>> => {
+    const trimmed = q.trim();
+
+    if (isEmpty(trimmed)) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
+    const records = await ctx.db
+      .query("project")
+      .withSearchIndex("search_title", (s) => s.search("title", trimmed))
       .paginate({
         ...paginationOpts,
         numItems: Math.min(50, paginationOpts.numItems),
